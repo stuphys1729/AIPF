@@ -29,6 +29,12 @@ bestMove(Pos, Cutoff, NextPos) :-
     nl, write('Took '), write(Elapsed), write('s.'), nl,
     write('Move has value '), write(Val), write('.'), nl.
 
+seed_with(Seed) :-
+    % Weird bug requires double invocation as well as the call to random.
+    set_random(seed(Seed)),
+    random(_),
+    set_random(seed(Seed)).
+
 % Start the game using default settings.
 start :-
     start_cutoff(3, 3, -1).
@@ -36,7 +42,7 @@ start :-
 % Start the game with a seeded RNG.
 % start(+Seed).
 start(Seed) :-
-    set_random(seed(Seed)),
+    seed_with(Seed),
     start.
 
 % Start the game with specific board properties.
@@ -46,13 +52,13 @@ start(Dim, N) :-
 % Start the game with a seed and specific board size and win run length.
 % start(+BoardDim, +InARow, +Seed)
 start(Dim, N, Seed) :-
-    set_random(seed(Seed)),
+    seed_with(Seed),
     start_cutoff(Dim, N, -1).
 
 % For part 3
 % start(+BoardDim, +InARow, +Cutoff, +Seed)
 start_cutoff(Dim, N, Cutoff, Seed) :-
-    set_random(seed(Seed)),
+    seed_with(Seed),
     start_cutoff(Dim, N, Cutoff).
 
 % Start the game with specific board size and win run length.
