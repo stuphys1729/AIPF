@@ -15,7 +15,19 @@
 % expectiminimax(Pos, BestNextPos, Val) :-
 %     expectiminimax(Pos, -1, BestNextPos, Val).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% expectiminimax(Pos, BestNextPos, Val) :- ...
+
+expectiminimax(Pos, BestNextPos, Val) :-
+    bagof(NextPos, move(Pos, NextPos), NextPosList),
+    strat_at(Pos, Strat),
+    best(NextPosList, Strat, BestNextPos, Val), !.
+
+expectiminimax(Pos, _, Val) :-
+    chance_to_move(Pos),
+    expectedVal(Pos, Val).
+
+expectiminimax(Pos, _, Val) :-
+    utility(Pos, Val).
+
 
 % One choice to move to automatically means it is the best next position.
 best([Pos], _, Pos, Val) :-
@@ -42,5 +54,11 @@ betterOf(_, _, Pos1, Val1, _, Pos1, Val1).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Implement expectedVal.
+% expectedVal(+Pos, -ExpVal)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% expectedVal(Pos, Val) :- ...
+expectedVal(node(TL, TR, chance(P)), Val) :-
+    expectiminimax(TL, _, LVal),
+    expectiminimax(TR, _, RVal),
+    chance_of(node(TL, TR, chance(P)), TL, LProb),
+    chance_of(node(TL, TR, chance(P)), TR, RProb),
+    Val is (LVal * LProb) + (RVal * RProb).
