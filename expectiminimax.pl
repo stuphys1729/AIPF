@@ -16,14 +16,14 @@
 %     expectiminimax(Pos, -1, BestNextPos, Val).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-expectiminimax(Pos, BestNextPos, Val) :-
-    bagof(NextPos, move(Pos, NextPos), NextPosList),
-    strat_at(Pos, Strat),
-    best(NextPosList, Strat, BestNextPos, Val), !.
-
 expectiminimax(Pos, _, Val) :-
     chance_to_move(Pos),
     expectedVal(Pos, Val).
+
+expectiminimax(Pos, BestNextPos, Val) :-
+    bagof(NextPos, move(Pos, NextPos), NextPosList),
+    strat_at(Pos, Strat),
+    best(NextPosList, Strat, BestNextPos, Val).
 
 expectiminimax(Pos, _, Val) :-
     utility(Pos, Val).
@@ -55,10 +55,15 @@ betterOf(_, _, Pos1, Val1, _, Pos1, Val1).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Implement expectedVal.
 % expectedVal(+Pos, -ExpVal)
+% expectedVal/2 does not require any notion of the best next position because
+% each outcome is assumed to have a non-zero probability and so their values
+% must both be considered; The chance nodes do not have a 'best move'.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-expectedVal(node(TL, TR, chance(P)), Val) :-
+expectedVal(Pos, Val) :-
+    bagof(NextPos, move(Pos, NextPos), NextPosList),
+    [TL, TR] = NextPosList,
     expectiminimax(TL, _, LVal),
     expectiminimax(TR, _, RVal),
-    chance_of(node(TL, TR, chance(P)), TL, LProb),
-    chance_of(node(TL, TR, chance(P)), TR, RProb),
+    chance_of(Pos, TL, LProb),
+    chance_of(Pos, TR, RProb),
     Val is (LVal * LProb) + (RVal * RProb).

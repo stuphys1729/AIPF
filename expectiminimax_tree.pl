@@ -102,7 +102,27 @@ utility(leaf(L), L).
 % You can uncomment this when you have implemented expectiminimax.
 solved_tree(N, T, Best, Val) :- gen_tree(N, T), expectiminimax(T, Best, Val).
 
-% Example output from solved_tree/4:
-% T = node(node(node(leaf(-3), leaf(-6), max), node(leaf(8), leaf(-9), max), chance(0.72080699219799)), node(node(leaf(7), leaf(9), max), node(leaf(8), leaf(-6), max), chance(0.17571656211201578)), min),
-% B = node(node(leaf(-3), leaf(-6), max), node(leaf(8), leaf(-9), max), chance(0.72080699219799)),
-% V = 0.07112308582210947
+% T = 
+% node(
+%     node(
+%         node(
+%             leaf(5), leaf(-1), max
+%         ), 
+%         node(
+%             leaf(-8), leaf(-7), max
+%         ), 
+%         chance(0.7263581176852368)
+%     ),
+%     node(
+%         node(
+%             leaf(-9), leaf(1), max
+%         ), 
+%         node(
+%             leaf(-6), leaf(7), max
+%         ), 
+%         chance(0.5265403763133746)
+%     ), 
+%     min
+% ),
+% B = node(node(leaf(5), leaf(-1), max), node(leaf(-8), leaf(-7), max), chance(0.7263581176852368)),
+% V = 1.716297412222842
