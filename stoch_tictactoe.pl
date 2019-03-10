@@ -43,11 +43,12 @@ move([Player, PlayingAs, play, Board,     Dim, N],
      [NextP,  PlayingAs, win,  NextBoard, Dim, N]) :-
         nextPlayer(Player, NextP),
         move_aux(PlayingAs, Board, NextBoard),
-        winPos(PlayingAs, NextBoard,_,_), !.
+        winPos(PlayingAs, NextBoard,_,_).
 
 % Player can cause a draw
 move([Player, PlayingAs, play, Board,     Dim, N], 
      [NextP,  PlayingAs, draw, NextBoard, Dim, N]) :-
+        \+ chance_to_move([Player, PlayingAs, play, Board, Dim, N]),
         nextPlayer(Player, NextP),
         move_aux(PlayingAs, Board, NextBoard),
         drawPos(NextBoard,_,_), !.
@@ -57,7 +58,8 @@ move([Player, PlayingAs, play, Board,     Dim, N],
      [NextP,  NextP,     play, NextBoard, Dim, N]) :-
         \+ chance_to_move([Player,   PlayingAs, play, Board,  Dim, N]),
         nextPlayer(Player, NextP),
-        move_aux(PlayingAs, Board, NextBoard).
+        move_aux(PlayingAs, Board, NextBoard),
+        \+ winPos(PlayingAs, NextBoard,_,_).
 
 move_chance([chance(P), chance(P),  play, Board, Dim, N],
             [P,         PlayingAs,  play, Board, Dim, N]) :-
