@@ -1,4 +1,4 @@
-:- module(expectiminimax, [expectiminimax/4]).
+:- module(expectiminimax, [expectiminimax/4, expectiminimax/3]).
 :- use_module(library(random)).
 
 % expectiminimax(+Pos, -BestNextPos, -Val)
@@ -21,25 +21,24 @@ expectiminimax(Pos, BestNextPos, Val) :-
 
 expectiminimax(Pos, Cutoff, _, Val) :-
     chance_to_move(Pos),
-    expectedVal(Pos, Cutoff, Val).
+    expectedVal(Pos, Cutoff, Val), !.
 
 expectiminimax(Pos, Cutoff, BestNextPos, Val) :-
     Cutoff > 0,
     bagof(NextPos, move(Pos, NextPos), NextPosList),
     strat_at(Pos, Strat),
-    best(NextPosList, Strat, BestNextPos, Val), !.
+    best(NextPosList, Cutoff, Strat, BestNextPos, Val), !.
 
 % Hit the cutoff so evaluate this state directly
-expectiminimax(Pos, Cutoff, BestNextPos, Val) :-
+expectiminimax(Pos, Cutoff, _, Val) :-
     Cutoff = 0,
-    eval(Pos, Val).
+    eval(Pos, Val), !.
 
-% Cutoff = -1 means we are doing full search
+% If we get this far, Cutoff < 0 so we are doing full search
 expectiminimax(Pos, Cutoff, BestNextPos, Val) :-
-    Cutoff = -1,
     bagof(NextPos, move(Pos, NextPos), NextPosList),
     strat_at(Pos, Strat),
-    best(NextPosList, Strat, BestNextPos, Val), !.
+    best(NextPosList, Cutoff, Strat, BestNextPos, Val), !.
 
 % If we get this far, there were no moves available from Pos, so it is terminal
 expectiminimax(Pos, _,  _, Val) :-
@@ -47,15 +46,16 @@ expectiminimax(Pos, _,  _, Val) :-
 
 
 % One choice to move to automatically means it is the best next position.
-best([Pos], _, Pos, Val) :-
-    expectiminimax(Pos, _, Val), !.
+best([Pos], Cutoff, _, Pos, Val) :-
+    expectiminimax(Pos, Cutoff, _, Val), !.
 
 % To pick between a number of positions, calculate the minimax of the first one,
 % find the best of the rest, then pick whichever was best out of the first or
 % the one which was best of the rest.
-best([Pos1 | PosList], Strat, BestPos, BestVal) :-
-    expectiminimax(Pos1, _, Val1),
-    best(PosList, Strat, Pos2, Val2),
+best([Pos1 | PosList], Cutoff, Strat, BestPos, BestVal) :-
+    NewCutoff is Cutoff - 1,
+    expectiminimax(Pos1, NewCutoff, _, Val1),
+    best(PosList, Cutoff, Strat, Pos2, Val2), % still use old cutoff for rest
     betterOf(Pos1, Val1, Pos2, Val2, Strat, BestPos, BestVal).
 
 % Pos0 better than Pos1.
@@ -83,4 +83,4 @@ expectedVal(Pos, Cutoff, Val) :-
     expectiminimax(TR, Cutoff, _, RVal),
     chance_of(Pos, TL, LProb),
     chance_of(Pos, TR, RProb),
-    Val is (LVal * LProb) + (RVal * RProb).
+    Val is (LVal * LProb) + (RVal * RProb), !.

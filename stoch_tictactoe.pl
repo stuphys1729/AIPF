@@ -33,7 +33,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % move(+Pos, -NextPos)
 
-move([_, _, win |_], _) :- fail.
+% get_time(Before), test([o,o,play,[0,0,0, 0,0,0, 0,o,0], 3, 3], B, V), get_time(After), Elapsed is floor(After-Before).
+% get_time(Before), test([x,o,play,[0,0,0, 0,0,0, 0,0,0], 3, 3], B, V), get_time(After), Elapsed is floor(After-Before).
+move([_, _, win |_], _) :- fail, !.
 
 move(Pos, NextPos) :-
     chance_to_move(Pos),
