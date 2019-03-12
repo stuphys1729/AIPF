@@ -16,16 +16,28 @@
 %     expectiminimax(Pos, -1, BestNextPos, Val).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-expectiminimax(Pos, _, Val) :-
-    chance_to_move(Pos),
-    expectedVal(Pos, Val).
+expectiminimax(Pos, BestNextPos, Val) :- 
+    expectiminimax(Pos, -1, BestNextPos, Val).
 
-expectiminimax(Pos, BestNextPos, Val) :-
+expectiminimax(Pos, Cutoff, _, Val) :-
+    chance_to_move(Pos),
+    expectedVal(Pos, Cutoff, Val).
+
+expectiminimax(Pos, Cutoff, BestNextPos, Val) :-
+    Cutoff > 0,
     bagof(NextPos, move(Pos, NextPos), NextPosList),
     strat_at(Pos, Strat),
-    best(NextPosList, Strat, BestNextPos, Val).
+    best(NextPosList, Strat, BestNextPos, Val), !.
 
-expectiminimax(Pos, _, Val) :-
+% Hit the cutoff so evaluate this state directly
+expectiminimax(Pos, Cutoff, BestNextPos, Val) :-
+    Cutoff = 0,
+    eval(Pos, Val).
+
+% Cutoff = -1 means we are doing full search
+
+% If we get this far, there were no moves available from Pos, so it is terminal
+expectiminimax(Pos, _,  _, Val) :-
     utility(Pos, Val).
 
 
@@ -59,11 +71,11 @@ betterOf(_, _, Pos1, Val1, _, Pos1, Val1).
 % each outcome is assumed to have a non-zero probability and so their values
 % must both be considered; The chance nodes do not have a 'best move'.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-expectedVal(Pos, Val) :-
+expectedVal(Pos, Cutoff, Val) :-
     bagof(NextPos, move(Pos, NextPos), NextPosList),
     [TL, TR] = NextPosList,
-    expectiminimax(TL, _, LVal),
-    expectiminimax(TR, _, RVal),
+    expectiminimax(TL, Cutoff, _, LVal),
+    expectiminimax(TR, Cutoff, _, RVal),
     chance_of(Pos, TL, LProb),
     chance_of(Pos, TR, RProb),
     Val is (LVal * LProb) + (RVal * RProb).

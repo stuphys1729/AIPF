@@ -121,12 +121,40 @@ utility([_, _, draw |_],  0).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Part 3: Describe your evaluation predicates here.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%
+% a)
+% We can break up the board into sub-boards of a smaller size and see if either
+% player wins any of those sub-boards. In the 4x4 case there are 4 3x3 
+% sub-boards that can be won, so we can use the number of boards won by each
+% player divided by 4 to keep it bounded between -1 and 1. This will encourage 
+% the computer to create wining possibilities from the corners of the board that
+% it can hopefully complete in the full board with one further tile.
+%
+% b)
+% We can count the number of avenues still available for each player to win. By
+% this I mean if each player were able to put down as many tiles as they wanted,
+% how many different ways are they able to win from the current board state.
+% Again this can be normalised by considering the maximum number of ways a 
+% player can win. It encourages the computer to set itself up with multiple 
+% possible winning positions, which is a known best technique in the 
+% non-stachastic version (forcing your opponent into a postion where they cannot
+% prevent you winning in the next move by placing only one tile).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Part 3: Compare your evaluation predicates here.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%
+% a) This seems like the most intuitive heuristic because it still uses the same
+% predicate to test the terminal win position, just with a subset of the board.
+% It also generalises nicely to even larger games. 
+% This method does however discard some useful information about the full game
+% state as winning positions in 3x3 might already be blocked from extending to
+% the 4x4 board.
+%
+% b) This method will be a little more complex to implement, but it doesn't
+% discard any information about the full game state. The strategy this method
+% encourages is overall better than the other method if it is able to enforce it
+% so I think this method will perform better overall.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Part 3: Implement eval, your utility predicate for partially completed games.
@@ -135,7 +163,46 @@ utility([_, _, draw |_],  0).
 % and write a separate eval which you can change to delegate to one or the other
 % during testing.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% a) Sub-Games:
+eval(Pos, Val) :- subsets(Pos, Val).
+
+% b) Win Possibilities
+%eval(Pos, Val) :- possibilities(Pos, Val).
+
 eval(_, 0).
+
+subsets([P, _, play, 
+        [X1,X2,X3,X4, X5,X6,X7,X8, X9,X10,X11,X12, X13,X14,X15,X16],
+        _, _], Val) :-
+            subsets1(P, [X1,X2,X3, X5, X6 ,X7,  X9 ,X10,X11], Vala1),
+            subsets1(P, [X2,X3,X4, X6, X7, X8,  X10,X11,X12], Vala2),
+            subsets1(P, [X5,X6,X7, X9, X10,X11, X13,X14,X15], Vala3),
+            subsets1(P, [X6,X7,X8, X10,X11,X12, X14,X15,X16], Vala4),
+            Vala12 is Vala1 + Vala2,
+            Vala34 is Vala3 + Vala4,
+            Vala is Vala12 + Vala34,
+            opposite(P, Opp),
+            subsets1(Opp, [X1,X2,X3, X5, X6 ,X7,  X9 ,X10,X11], Valb1),
+            subsets1(Opp, [X2,X3,X4, X6, X7, X8,  X10,X11,X12], Valb2),
+            subsets1(Opp, [X5,X6,X7, X9, X10,X11, X13,X14,X15], Valb3),
+            subsets1(Opp, [X6,X7,X8, X10,X11,X12, X14,X15,X16], Valb4),
+            Valb12 is Valb1 + Valb2,
+            Valb34 is Valb3 + Valb4,
+            Valb is Valb12 + Valb34,
+            Val is Vala - Valb, !.
+
+subsets1(P, Board, Val) :-
+    winPos(P, Board, _, _),
+    Val is 0.25.
+
+subsets1(_, _, 0).
+
+opposite(x, o).
+opposite(o, x).
+            
+% Test with:
+% subsets([x, o, play, [x,x,x,0, 0,0,0,0, o,o,o,0, 0,0,0,0], 4, 4], Val).
+% Val = -0.25
 
 % winPos(+Player, +Board, +Dim, +InARow)
 % True if Player wins in Board.
