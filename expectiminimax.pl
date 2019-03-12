@@ -1,4 +1,4 @@
-:- module(expectiminimax, [expectiminimax/3]).
+:- module(expectiminimax, [expectiminimax/4]).
 :- use_module(library(random)).
 
 % expectiminimax(+Pos, -BestNextPos, -Val)
@@ -35,6 +35,11 @@ expectiminimax(Pos, Cutoff, BestNextPos, Val) :-
     eval(Pos, Val).
 
 % Cutoff = -1 means we are doing full search
+expectiminimax(Pos, Cutoff, BestNextPos, Val) :-
+    Cutoff = -1,
+    bagof(NextPos, move(Pos, NextPos), NextPosList),
+    strat_at(Pos, Strat),
+    best(NextPosList, Strat, BestNextPos, Val), !.
 
 % If we get this far, there were no moves available from Pos, so it is terminal
 expectiminimax(Pos, _,  _, Val) :-

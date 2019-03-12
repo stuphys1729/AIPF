@@ -3,6 +3,7 @@
 
 :- use_module(winpos).
 :- use_module(library(clpfd), [transpose/2]).
+:- use_module(library(aggregate)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Explain here what the assumptions being made in tictactoe.pl (which
@@ -171,9 +172,14 @@ eval(Pos, Val) :- subsets(Pos, Val).
 
 eval(_, 0).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Test with:
+% subsets([x, o, play, [x,x,x,0, 0,0,0,0, o,o,o,0, 0,0,0,0], 4, 4], Val).
+% Val = -0.25
+%
 subsets([P, _, play, 
         [X1,X2,X3,X4, X5,X6,X7,X8, X9,X10,X11,X12, X13,X14,X15,X16],
-        _, _], Val) :-
+        _, _], Val) :- % sum sub-wins for player
             subsets1(P, [X1,X2,X3, X5, X6 ,X7,  X9 ,X10,X11], Vala1),
             subsets1(P, [X2,X3,X4, X6, X7, X8,  X10,X11,X12], Vala2),
             subsets1(P, [X5,X6,X7, X9, X10,X11, X13,X14,X15], Vala3),
@@ -181,7 +187,7 @@ subsets([P, _, play,
             Vala12 is Vala1 + Vala2,
             Vala34 is Vala3 + Vala4,
             Vala is Vala12 + Vala34,
-            opposite(P, Opp),
+            opposite(P, Opp), % sum sub-wins for opponent
             subsets1(Opp, [X1,X2,X3, X5, X6 ,X7,  X9 ,X10,X11], Valb1),
             subsets1(Opp, [X2,X3,X4, X6, X7, X8,  X10,X11,X12], Valb2),
             subsets1(Opp, [X5,X6,X7, X9, X10,X11, X13,X14,X15], Valb3),
@@ -197,12 +203,51 @@ subsets1(P, Board, Val) :-
 
 subsets1(_, _, 0).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Test with:
+% possibilities([x, o, play, [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0], 4, 4], Val).
+% Val = 0.
+%
+% possibilities([x, o, play, [x,x,x,0, 0,0,0,0, o,o,o,0, 0,0,0,0], 4, 4], Val).
+% Val = -0.1.
+%
+% possibilities([x, o, play, [x,x,x,0, 0,0,0,0, 0,0,0,0, 0,0,0,o], 4, 4], Val).
+% Val = 0.2.
+
+possibilities([P, _, play, Pos, _, _], Val) :-
+    setof(TypeA, all_possibilities(P, Pos, TypeA), LA),
+    length(LA, NA),
+    ValA is NA / 10,
+    opposite(P, Opp),
+    setof(TypeB, all_possibilities(Opp, Pos, TypeB), LB),
+    length(LB, NB),
+    ValB is NB / 10,
+    Val is ValA - ValB, !.
+
+
+all_possibilities(P, 
+    [X1,X2,X3,X4, X5,X6,X7,X8, X9,X10,X11,X12, X13,X14,X15,X16], Type) :-
+        possible(X1, X2, X3, X4, P), Type is 1 ;        % 1st line
+        possible(X5, X6, X7, X8, P), Type is 2 ;        % 2nd line
+        possible(X9, X10, X11, X12, P), Type is 3 ;     % 3rd line
+        possible(X13, X14, X15, X16, P), Type is 4 ;    % 4th line
+        possible(X1, X5, X9, X13, P), Type is 5 ;       % 1st col
+        possible(X2, X6, X10, X14, P), Type is 6 ;      % 2nd col
+        possible(X3, X7, X11, X15, P), Type is 7 ;      % 3rd col
+        possible(X4, X8, X12, X16, P), Type is 8 ;      % 4th col
+        possible(X1, X6, X11, X16, P), Type is 9 ;      % 1st diag
+        possible(X4, X7, X10, X13, P), Type is 10.      % 2nd diag
+
+possible(X1, X2, X3, X4, P) :-
+    (X1 = P ; X1 = 0),
+    (X2 = P ; X2 = 0),
+    (X3 = P ; X3 = 0),
+    (X4 = P ; X4 = 0).
+
 opposite(x, o).
 opposite(o, x).
-            
-% Test with:
-% subsets([x, o, play, [x,x,x,0, 0,0,0,0, o,o,o,0, 0,0,0,0], 4, 4], Val).
-% Val = -0.25
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % winPos(+Player, +Board, +Dim, +InARow)
 % True if Player wins in Board.
