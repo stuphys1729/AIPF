@@ -4,6 +4,12 @@
 % expectiminimax(+Pos, -BestNextPos, -Val)
 % Pos is a position, Val is its expectiminimax value.
 % Best move from Pos leads to position BestNextPos.
+%
+% If there are no available moves from Pos, the utility of Pos is Val.
+% If chance is to move from Pos, Val is is the expected value of Pos (see 
+% expectedVal/3)
+% If there are several moves available from Pos, Val is the best of the values
+% of the next positions according to the strategy at Pos.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Implement expectiminimax. You do NOT have to modify any of the other
 % functions. This goes for every predicate we ask you to modify. You may
@@ -38,12 +44,12 @@ expectiminimax(Pos, Cutoff, _, Val) :-
 expectiminimax(Pos, Cutoff, BestNextPos, Val) :-
     Cutoff < 0,
     setof(NextPos, move(Pos, NextPos), NextPosList),
-    strat_at(Pos, Strat),
-    best(NextPosList, Cutoff, Strat, BestNextPos, Val), !.
+    strat_at(Pos, Strat), !,
+    best(NextPosList, Cutoff, Strat, BestNextPos, Val).
 
 % If we get this far, there were no moves available from Pos, so it is terminal
 expectiminimax(Pos, _,  _, Val) :-
-    utility(Pos, Val).
+    utility(Pos, Val), !.
 
 
 % One choice to move to automatically means it is the best next position.
@@ -76,10 +82,14 @@ betterOf(_, _, Pos1, Val1, _, Pos1, Val1).
 % expectedVal/2 does not require any notion of the best next position because
 % each outcome is assumed to have a non-zero probability and so their values
 % must both be considered; The chance nodes do not have a 'best move'.
+% 
+% Since chance is 'moving' from Pos, there will be two possible outcomes, TL and
+% TR. Val is the weighted sum of the values of each possible outcome by their
+% probability.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 expectedVal(Pos, Cutoff, Val) :-
     setof(NextPos, move(Pos, NextPos), NextPosList),
-    [TL, TR] = NextPosList,
+    [TL, TR] = NextPosList, !,
     expectiminimax(TL, Cutoff, _, LVal),
     expectiminimax(TR, Cutoff, _, RVal),
     chance_of(Pos, TL, LProb),

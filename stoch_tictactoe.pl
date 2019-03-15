@@ -14,7 +14,8 @@
 % that one player can make a move with the other player's piece and win for them
 %
 % b) The utility predicate only considers the 3-item game state, not considering
-% the token being used by the current player
+% the token being used by the current player and therefore whether a win state
+% for a certain token is a good thing for the current player
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -38,15 +39,22 @@
 % profile(test([x,x,play,[0,0,0, 0,o,0, 0,o,0], 3, 3], B, V)).
 % profile(test([x,x,play,[x,o,x, o,o,0, o,x,0], 3, 3], B, V)).
 
+% Cutoff tests
+% play([x, x, play, [o,o,0,0, 0,x,0,0, 0,x,0,o, 0,o,x,0], 4, 4], 4, x).
+% play([x, x, play, [o,o,0,0, x,x,0,0, 0,x,0,o, 0,o,x,0], 4, 4], 4, x).
+% play([x, x, play, [o,o,0,0, x,x,0,0, 0,x,o,o, o,o,x,0], 4, 4], 4, x).
+% play([x, x, play, [0,0,0,o, 0,x,0,0, 0,x,0,o, x,o,0,0], 4, 4], 3, x).
+
 move([_, _, win |_], _) :- fail, !.
 
 move(Pos, NextPos) :-
-    chance_to_move(Pos),
+    chance_to_move(Pos), !,
     move_chance(Pos, NextPos).
 
 % Player can make move that wins for that player
 move([Player, PlayingAs, play, Board,     Dim, N], 
      [NextP,  PlayingAs, win,  NextBoard, Dim, N]) :-
+        \+ chance_to_move([Player, PlayingAs, play, Board, Dim, N]),
         nextPlayer(Player, NextP),
         move_aux(PlayingAs, Board, NextBoard),
         winPos(PlayingAs, NextBoard,_,_).
@@ -59,7 +67,7 @@ move([Player, PlayingAs, play, Board,     Dim, N],
         move_aux(PlayingAs, Board, NextBoard),
         drawPos(NextBoard,_,_), !.
 
-% Player can make move that continues play, requiring a chance event
+% Player can make move that continues play
 move([Player, PlayingAs, play, Board,     Dim, N],
      [NextP,  NextP,     play, NextBoard, Dim, N]) :-
         \+ chance_to_move([Player,   PlayingAs, play, Board,  Dim, N]),
@@ -89,14 +97,13 @@ move_aux(P, [B|Bs], [B|B2s]) :-
 % strat_at(+Pos. -Strat)
 strat_at([x|_], max) :- !.
 strat_at([o|_], min) :- !.
-%strat_at(Pos, random) :- chance_to_move(Pos).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Implement chance_to_move. chance_to_move is true if in the given position
 % the coin is to be flipped i.e. chance is to "move".
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % chance_to_move(+Pos)
-chance_to_move([chance(_) |_]) :- !.
+chance_to_move([chance(_), chance(_) |_]) :- !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Implement chance_of.
@@ -161,7 +168,31 @@ utility([_, _, draw |_],  0) :- !.
 % discard any information about the full game state. The strategy this method
 % encourages is overall better than the other method if it is able to enforce it
 % so I think this method will perform better overall.
-
+%
+% Play-testing:
+% My implementation of expectiminmax seemed to scale very poorly with the number
+% of available moves, and in this part with a 4x4 board state - even with the
+% cutoff - it was impossible to play games against it from the beginning.
+% Doing some play-testing on some later board states:
+%
+% ?- play([x, x, play, [0,0,o,o, 0,x,0,0, 0,x,0,o, x,o,0,0], 4, 4], 4, x).
+%
+% I was able to test out the two heuristics despite the performance issues.
+% Both methods proved to be good opponents from a board state with 8 remaining
+% spaces and a cutoff of 4, both adopting quite a defensive strategy.
+% The first heuristic did however result in a somewhat 'defeatist' behaviour in
+% that when a game was looking likely for the opponent to win, it would not
+% 'try' as actively to block the opponent
+%
+% The second heuristic was overall harder to beat, as it made moves that both
+% added avenues for itself to win but also blocked avenues for the opponent to
+% win. It did however sometimes block off more promising avenues of success for
+% itself to win when placing the opponent's token because it has no notion of
+% whether it is closer to winning one row because it has 2 tokens in it than 
+% if it had only one (with the remaining spaces being empty in both cases). An
+% improvement would be to also score a possible winning row/column/diagonal with
+% the number of its own tokens in that row/column/diagonal.
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Part 3: Implement eval, your utility predicate for partially completed games.
 % You should implement two of these, but only one should be called eval when
@@ -170,10 +201,10 @@ utility([_, _, draw |_],  0) :- !.
 % during testing.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % a) Sub-Games:
-eval(Pos, Val) :- subsets(Pos, Val).
+%eval(Pos, Val) :- subsets(Pos, Val).
 
 % b) Win Possibilities
-%eval(Pos, Val) :- possibilities(Pos, Val).
+eval(Pos, Val) :- possibilities(Pos, Val).
 
 eval(_, 0).
 
