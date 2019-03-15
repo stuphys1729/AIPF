@@ -25,7 +25,7 @@ expectiminimax(Pos, Cutoff, _, Val) :-
 
 expectiminimax(Pos, Cutoff, BestNextPos, Val) :-
     Cutoff > 0,
-    bagof(NextPos, move(Pos, NextPos), NextPosList),
+    setof(NextPos, move(Pos, NextPos), NextPosList),
     strat_at(Pos, Strat),
     best(NextPosList, Cutoff, Strat, BestNextPos, Val), !.
 
@@ -36,7 +36,8 @@ expectiminimax(Pos, Cutoff, _, Val) :-
 
 % If we get this far, Cutoff < 0 so we are doing full search
 expectiminimax(Pos, Cutoff, BestNextPos, Val) :-
-    bagof(NextPos, move(Pos, NextPos), NextPosList),
+    Cutoff < 0,
+    setof(NextPos, move(Pos, NextPos), NextPosList),
     strat_at(Pos, Strat),
     best(NextPosList, Cutoff, Strat, BestNextPos, Val), !.
 
@@ -77,7 +78,7 @@ betterOf(_, _, Pos1, Val1, _, Pos1, Val1).
 % must both be considered; The chance nodes do not have a 'best move'.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 expectedVal(Pos, Cutoff, Val) :-
-    bagof(NextPos, move(Pos, NextPos), NextPosList),
+    setof(NextPos, move(Pos, NextPos), NextPosList),
     [TL, TR] = NextPosList,
     expectiminimax(TL, Cutoff, _, LVal),
     expectiminimax(TR, Cutoff, _, RVal),

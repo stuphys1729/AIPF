@@ -33,8 +33,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % move(+Pos, -NextPos)
 
-% get_time(Before), test([o,o,play,[0,0,0, 0,0,0, 0,o,0], 3, 3], B, V), get_time(After), Elapsed is floor(After-Before).
 % get_time(Before), test([x,o,play,[0,0,0, 0,0,0, 0,0,0], 3, 3], B, V), get_time(After), Elapsed is floor(After-Before).
+% get_time(Before), test([o,o,play,[0,0,0, 0,0,0, 0,o,0], 3, 3], B, V), get_time(After), Elapsed is floor(After-Before).
+% profile(test([x,x,play,[0,0,0, 0,o,0, 0,o,0], 3, 3], B, V)).
+% profile(test([x,x,play,[x,o,x, o,o,0, o,x,0], 3, 3], B, V)).
+
 move([_, _, win |_], _) :- fail, !.
 
 move(Pos, NextPos) :-
@@ -70,7 +73,7 @@ move_chance([chance(P), chance(P),  play, Board, Dim, N],
 
 move_chance([chance(P), chance(P),  play, Board, Dim, N],
             [P,         PlayingAs,  play, Board, Dim, N]) :-
-                PlayingAs = o.
+                PlayingAs = o, !.
 
 
 % move_aux(+Player, +Board, -NextBoard)
@@ -84,8 +87,8 @@ move_aux(P, [B|Bs], [B|B2s]) :-
 % Implement strat_at.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % strat_at(+Pos. -Strat)
-strat_at([x|_], max).
-strat_at([o|_], min).
+strat_at([x|_], max) :- !.
+strat_at([o|_], min) :- !.
 %strat_at(Pos, random) :- chance_to_move(Pos).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,14 +96,14 @@ strat_at([o|_], min).
 % the coin is to be flipped i.e. chance is to "move".
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % chance_to_move(+Pos)
-chance_to_move([chance(_) |_]).
+chance_to_move([chance(_) |_]) :- !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Implement chance_of.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % chance_of(+Pos, +NextPos, -Prob)
 % Probability of moving from Pos to NextPos at a chance node.
-chance_of([chance(P)|_], [P|_], 0.5).
+chance_of([chance(P)|_], [P|_], 0.5) :- !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Implement utility. Think carefully about what you do and do not know given
@@ -114,11 +117,11 @@ chance_of([chance(P)|_], [P|_], 0.5).
 % We will use  1 when MAX (x) wins
 %             -1 when MIN (o) win
 %              0 otherwise.
-utility([chance(o), x, win |_],  1).
-utility([chance(o), o, win |_], -1).
-utility([chance(x), x, win |_],  1).
-utility([chance(x), o, win |_], -1).
-utility([_, _, draw |_],  0).
+utility([chance(o), x, win |_],  1) :- !.
+utility([chance(o), o, win |_], -1) :- !.
+utility([chance(x), x, win |_],  1) :- !.
+utility([chance(x), o, win |_], -1) :- !.
+utility([_, _, draw |_],  0) :- !.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
